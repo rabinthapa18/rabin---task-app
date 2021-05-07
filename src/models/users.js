@@ -50,6 +50,8 @@ const userSchema = new mongoose.Schema({
             required: true
         }
     }]
+}, {
+    timestamps: true
 })
 
 //connecting to task
@@ -99,7 +101,7 @@ userSchema.statics.findByCredentials = async (email, password) => {
 }
 
 
-// hashing file before saving
+// hashing password before saving
 userSchema.pre('save', async function (next) {
     const user = this
 
