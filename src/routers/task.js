@@ -1,10 +1,14 @@
 const express = require('express')
 const router = new express.Router()
 const Task = require('../models/tasks')
+const auth = require('../middlewares/auth')
 
 // ------- creating task -------
-router.post('/tasks', async (req, res) => {
-    const task = new Task(req.body)
+router.post('/tasks', auth, async (req, res) => {
+    const task = new Task({
+        ...req.body,
+        user: req.user._id
+    })
 
     try {
         await task.save()
@@ -16,10 +20,10 @@ router.post('/tasks', async (req, res) => {
 
 // ------- reading tasks -------
 // ----- reading all tasks -----
-router.get('/tasks', async (req, res) => {
+router.get('/tasks', auth, async (req, res) => {
 
     try {
-        const tasks = await Task.find({})
+        const tasks = await Task.find({ user: req.user._id })
         res.send(tasks)
     } catch (e) {
         res.status(500).send(e)
@@ -28,15 +32,10 @@ router.get('/tasks', async (req, res) => {
 
 
 // ----- reading single task -----
-router.get('/tasks/:id', async (req, res) => {
+router.get('/tasks/:id', auth, async (req, res) => {
     const _id = req.params.id
-
-    if (_id.toString().length != 24) {
-        return res.status(404).send({ error: "invalid id" })
-    }
-
     try {
-        const task = await Task.findById(_id)
+        const task = await Task.findOne({ _id, user: req.user._id })
         if (!task) {
             return res.status(404).send("task does not exist")
         }
@@ -48,11 +47,7 @@ router.get('/tasks/:id', async (req, res) => {
 
 
 // ------- updating task -------
-router.patch('/tasks/:id', async (req, res) => {
-    const _id = req.params.id
-    if (_id.toString().length != 24) {
-        return res.status(404).send({ error: "invalid id" })
-    }
+router.patch('/tasks/:id', auth, async (req, res) => {
     const updates = Object.keys(req.body)
     const allowedUpdates = ['description', 'completed']
     const isValidUpdate = updates.every((update) => allowedUpdates.includes(update))
@@ -62,10 +57,12 @@ router.patch('/tasks/:id', async (req, res) => {
     }
 
     try {
-        const task = await Task.findByIdAndUpdate(_id, req.body, { new: true, runValidators: true })
+        const task = await Task.findOne({ _id: req.params.id, user: req.user._id })
         if (!task) {
             return res.status(404).send({ error: "task does not exist" })
         }
+        updates.forEach((update) => task[update] = req.body[update])
+        await task.save()
         res.send(task)
     } catch (e) {
         return res.status(400).send(e)
@@ -73,13 +70,9 @@ router.patch('/tasks/:id', async (req, res) => {
 })
 
 // ------ remove task -------
-router.delete('/tasks/:id', async (req, res) => {
-    const _id = req.params.id
-    if (_id.toString().length != 24) {
-        return res.status(404).send({ error: "invalid id" })
-    }
+router.delete('/tasks/:id', auth, async (req, res) => {
     try {
-        const task = await Task.findByIdAndDelete(_id)
+        const task = await Task.findOneAndDelete({ _id: req.params.id, user: req.user._id })
 
         if (!task) {
             return res.status(404).send({ error: "task does not exist" })
