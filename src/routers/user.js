@@ -13,6 +13,9 @@ const { sendWelcomeEmail, sendByeEmail } = require('../email/account')
 router.post('/users/signup', async (req, res) => {
     const user = new User(req.body)
     try {
+        if (User.findOne({ email: req.body.email })) {
+            return res.send({ error: "Account with same email exist" })
+        }
         await user.save()
         sendWelcomeEmail(user.email, user.name)
         const token = await user.generateAuthToken()
