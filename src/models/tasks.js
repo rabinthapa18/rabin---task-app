@@ -1,6 +1,5 @@
 const mongoose = require('mongoose')
 const validator = require("validator")
-const chalk = require('chalk')
 
 
 const taskSchema = new mongoose.Schema({

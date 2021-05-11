@@ -2,6 +2,7 @@ const express = require('express')
 const router = new express.Router()
 const Task = require('../models/tasks')
 const auth = require('../middlewares/auth')
+const account = require('../email/account')
 
 // ------- creating task -------
 router.post('/tasks', auth, async (req, res) => {
@@ -14,9 +15,11 @@ router.post('/tasks', auth, async (req, res) => {
         await task.save()
         res.status(201).send(task)
     } catch (e) {
-        res.status(400).send(e)
+        //res.status(400).send(e)
+        console.log(e);
     }
 })
+
 
 // ------- reading tasks -------
 // ----- reading all tasks -----
@@ -87,6 +90,7 @@ router.patch('/tasks/:id', auth, async (req, res) => {
         return res.status(400).send(e)
     }
 })
+
 
 // ------ remove task -------
 router.delete('/tasks/:id', auth, async (req, res) => {
